@@ -1,6 +1,5 @@
 import { useState } from "react";
 import Input from "./Input";
-const math = require("mathjs");
 
 export default function Calc() {
   const [clearStatus, setClearStatus] = useState("AC");
@@ -8,6 +7,7 @@ export default function Calc() {
   const [curOutput, setCurOutput] = useState("");
   const [afterOp, setAfterOp] = useState(false);
 
+  // handle when clear button is pressed
   function clear(clearStatus: string) {
     if (clearStatus === "AC") {
       setPrevOutput("");
@@ -53,10 +53,12 @@ export default function Calc() {
   function doOperation(operation: string) {
     if (prevOutput && curOutput) {
       const val = evaluate();
-      setPrevOutput(val.concat(" ", operation));
-      setCurOutput("");
-      setClearStatus("AC");
-      setAfterOp(true);
+      if (val) {
+        setPrevOutput(val.concat(" ", operation));
+        setCurOutput("");
+        setClearStatus("AC");
+        setAfterOp(true);
+      }
     } else if (curOutput) {
       setPrevOutput(curOutput.concat(" ", operation));
       setCurOutput("");
@@ -79,7 +81,7 @@ export default function Calc() {
   // to toggle the sign (positive/negative) of the current number
   function toggleSign() {
     if (curOutput) {
-      setCurOutput(math.multiply(Number(curOutput), -1).toString());
+      setCurOutput((Number(curOutput) * -1).toString());
       setAfterOp(true);
     }
   }
@@ -95,40 +97,43 @@ export default function Calc() {
   function doMath(firstVal: string, operation: string, secondVal: string) {
     let evaluation;
     if (operation === "+") {
-      evaluation = math.add(parseFloat(firstVal), parseFloat(secondVal));
+      evaluation = parseFloat(firstVal) + parseFloat(secondVal);
     } else if (operation === "–" || operation === "-") {
-      evaluation = math.subtract(parseFloat(firstVal), parseFloat(secondVal));
+      evaluation = parseFloat(firstVal) - parseFloat(secondVal);
     } else if (operation === "x" || operation === "*") {
-      evaluation = math.multiply(parseFloat(firstVal), parseFloat(secondVal));
+      evaluation = parseFloat(firstVal) * parseFloat(secondVal);
     } else if (operation === "÷" || operation === "/") {
-      evaluation = math.divide(parseFloat(firstVal), parseFloat(secondVal));
+      evaluation = parseFloat(firstVal) / parseFloat(secondVal);
     }
-    const answer = evaluation.toString();
-    console.log(answer);
-    let nextOutput;
-    if (
-      (answer.includes(".") &&
-        answer.split(".")[1].substring(0, 5) === "99999") ||
-      (answer.includes(".") && answer.split(".")[1].substring(0, 5) === "00000")
-    ) {
-      nextOutput = Math.round(evaluation).toString();
-    } else if (answer.length > 9) {
-      let truncate = answer;
-      if (answer.includes(".")) {
-        const numDecPlaces = 9 - answer.split(".")[0].length - 1;
-        const roundFactor = Math.pow(10, numDecPlaces);
-        // Round evaluation
-        const rounded = Math.round(evaluation * roundFactor) / roundFactor;
-        console.log(rounded);
-        // Return the number as a string
-        truncate = rounded.toString();
+    if (evaluation) {
+      const answer = evaluation.toString();
+      console.log(answer);
+      let nextOutput;
+      if (
+        (answer.includes(".") &&
+          answer.split(".")[1].substring(0, 5) === "99999") ||
+        (answer.includes(".") &&
+          answer.split(".")[1].substring(0, 5) === "00000")
+      ) {
+        nextOutput = Math.round(evaluation).toString();
+      } else if (answer.length > 9) {
+        let truncate = answer;
+        if (answer.includes(".")) {
+          const numDecPlaces = 9 - answer.split(".")[0].length - 1;
+          const roundFactor = Math.pow(10, numDecPlaces);
+          // Round evaluation
+          const rounded = Math.round(evaluation * roundFactor) / roundFactor;
+          console.log(rounded);
+          // Return the number as a string
+          truncate = rounded.toString();
+        }
+        nextOutput = parseFloat(truncate.substring(0, 9)).toString();
+      } else {
+        nextOutput = answer;
       }
-      nextOutput = parseFloat(truncate.substring(0, 9)).toString();
-    } else {
-      nextOutput = answer;
+      setCurOutput(nextOutput);
+      return nextOutput;
     }
-    setCurOutput(nextOutput);
-    return nextOutput;
   }
 
   return (
@@ -145,57 +150,21 @@ export default function Calc() {
             <Input value={"%"} onClick={percentize} />
           </div>
           <div className="numbers">
-            <div className="row">
-              <Input
-                value={7}
-                inputType={"digit"}
-                onClick={() => enterNumber("7")}
-              />
-              <Input
-                value={8}
-                inputType={"digit"}
-                onClick={() => enterNumber("8")}
-              />
-              <Input
-                value={9}
-                inputType={"digit"}
-                onClick={() => enterNumber("9")}
-              />
-            </div>
-            <div className="row">
-              <Input
-                value={4}
-                inputType={"digit"}
-                onClick={() => enterNumber("4")}
-              />
-              <Input
-                value={5}
-                inputType={"digit"}
-                onClick={() => enterNumber("5")}
-              />
-              <Input
-                value={6}
-                inputType={"digit"}
-                onClick={() => enterNumber("6")}
-              />
-            </div>
-            <div className="row">
-              <Input
-                value={1}
-                inputType={"digit"}
-                onClick={() => enterNumber("1")}
-              />
-              <Input
-                value={2}
-                inputType={"digit"}
-                onClick={() => enterNumber("2")}
-              />
-              <Input
-                value={3}
-                inputType={"digit"}
-                onClick={() => enterNumber("3")}
-              />
-            </div>
+            {[
+              [7, 8, 9],
+              [4, 5, 6],
+              [1, 2, 3],
+            ].map((row) => (
+              <div className="row">
+                {row.map((num) => (
+                  <Input
+                    value={num}
+                    inputType={"digit"}
+                    onClick={() => enterNumber(num)}
+                  />
+                ))}
+              </div>
+            ))}
             <div className="row">
               <Input
                 value={0}
